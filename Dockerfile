@@ -1,29 +1,32 @@
-# syntax=docker/dockerfile:1
-
+# ===== DEPENDENCIES STAGE =====
 FROM node:18-alpine AS deps
 WORKDIR /app
+
+# Copia arquivos necessários para instalar dependências
 COPY package.json package-lock.json ./
+COPY prisma ./prisma
+
 RUN npm ci
 
+# ===== BUILD STAGE =====
 FROM node:18-alpine AS build
 WORKDIR /app
+
 COPY --from=deps /app/node_modules ./node_modules
-COPY package.json ./
-COPY tsconfig.json ./
-COPY prisma ./prisma
-COPY src ./src
+COPY --from=deps /app/prisma ./prisma
+COPY . .
+
 RUN npx prisma generate
 RUN npm run build
 
+# ===== RUNTIME STAGE =====
 FROM node:18-alpine AS prod
 WORKDIR /app
+
 ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY prisma ./prisma
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-ENV PORT=3000
-ENV DATABASE_URL="file:./prisma/dev.db"
-EXPOSE 3000
-ENTRYPOINT ["docker-entrypoint.sh"]
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/prisma ./prisma
+COPY package.json .
+
+CMD ["node", "dist/main.js"]

@@ -6,19 +6,29 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev:docker": "docker compose up -d app && docker compose up -d db",
     "studio": "prisma studio --port 5555 --browser none",
     "dev:studio": "concurrently -k -n api,studio -c green,blue \"npm run dev\" \"npm run studio\"",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "prestart": "prisma generate",
+    "start": "node dist/server.js",
+    "start:docker": "docker exec -it app npm start",
+    "postinstall": "prisma generate",
+    "prisma:generate": "docker exec -it db prisma generate",
+    "prisma:migrate:dev": "docker exec -it db prisma migrate dev"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "prisma": {
+    "schema": "src/prisma/schema.prisma"
+  },
   "dependencies": {
     "@prisma/client": "^6.17.0",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

@@ -1,10 +1,10 @@
-# GitHub Backend Challenge (Node.js + Express + TypeScript + Prisma/SQLite)
+# GitHub Backend Challenge (Node.js + Express + TypeScript + Prisma/PostgreSQL)
 
-This project implements a simple, professional API to interact with and store GitHub user repository data locally. It was built from scratch, separate from any existing projects, using Node.js, Express, TypeScript, Prisma (SQLite), and Axios.
+This project implements a simple, professional API to interact with and store GitHub user repository data locally. It was built from scratch, separate from any existing projects, using Node.js, Express, TypeScript, Prisma (PostgreSQL), and Axios.
 
 ## Features
 
-- Sync public repositories of a GitHub user into a local SQLite database
+- Sync public repositories of a GitHub user into a local PostgreSQL database
 - List stored repositories for a given user
 - Search stored repositories by text
 - Compute statistics from locally stored data (global or per user)
@@ -15,7 +15,7 @@ This project implements a simple, professional API to interact with and store Gi
 - Node.js, Express
 - TypeScript
 - Prisma ORM
-- SQLite (file-based DB)
+- PostgreSQL
 - Axios (HTTP client)
 
 ## Project Structure
@@ -84,7 +84,7 @@ npm install
 2) Configure environment
 ```
 # .env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/blueotter?schema=public"
 ```
 3) Initialize database (generate client + apply migrations)
 ```
@@ -171,7 +171,7 @@ Response (fields):
 
 ### Endpoint 3: Search repositories
 GET `/github/search?query=...`
-Search fields: name, description, language, htmlUrl (SQLite contains match).
+Search fields: name, description, language, htmlUrl.
 
 Example:
 ```
@@ -402,7 +402,7 @@ HTTP/1.1 200 OK
 
 ## Docker
 
-Para rodar com Docker (aplicação + volume persistente para SQLite):
+Para rodar com Docker (aplicação + Postgres):
 
 Pré-requisitos:
 - Docker e Docker Compose
@@ -429,8 +429,15 @@ curl -sS -H "Accept: application/json" http://localhost:3001/ | jq
 Configurações:
 - Porta interna da aplicação: `3000` (variável `PORT`).
 - Porta no host via Docker Compose: `3001` mapeando para a 3000 do container (ajuste em `docker-compose.yml` se desejar usar `3000`).
-- `DATABASE_URL` padrão: `file:./prisma/dev.db` (persistido no volume/arquivo montado).
+- Serviço Postgres incluído no Compose: usuário `postgres`, senha `postgres`, banco `blueotter`.
+- `DATABASE_URL` do app: `postgresql://postgres:postgres@db:5432/blueotter?schema=public`.
 - Observação: `total_users` e `top_users_by_repos` aparecem apenas no modo global.
+
+Migração de SQLite para PostgreSQL:
+- O provedor Prisma foi alterado para `postgresql` em `prisma/schema.prisma`.
+- Para ambiente novo: suba o Compose e rode `npx prisma migrate deploy` (o entrypoint faz isso automaticamente).
+- Para desenvolvimento local sem Docker: atualize `.env` com a `DATABASE_URL` de Postgres e rode `npx prisma migrate dev`.
+- Estratégia de dados: a forma mais simples é reinicializar a base e re-sincronizar via endpoints `/github/sync/:user` ou `/github/sync/:user/:repo`.
 
 6) Robustez de porta (opcional)
 
