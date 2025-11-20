@@ -36,18 +36,14 @@ export class GithubService {
   }
 
   async syncRepo(login: string, repoName: string) {
-    // Fetch the repository (verifies existence on GitHub)
     const repo: any = await fetchGithubRepo(login, repoName);
     const owner = repo.owner as { id: number; login: string; avatar_url?: string | null };
-
-    // Upsert the user based on repository owner
     const user = await prisma.githubUser.upsert({
       where: { id: owner.id },
       update: { login: owner.login, avatarUrl: owner.avatar_url ?? null },
       create: { id: owner.id, login: owner.login, avatarUrl: owner.avatar_url ?? null },
     });
 
-    // Upsert the repository
     await prisma.githubRepo.upsert({
       where: { id: repo.id },
       update: {

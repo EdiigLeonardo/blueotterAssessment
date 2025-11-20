@@ -1,28 +1,37 @@
-version: "3.9"
-
 services:
   app:
+    restart: unless-stopped
     build: .
-    container_name: my-node-app
-    restart: always
     ports:
       - "3000:3000"
+      - "3002:3002"
+      - "5525:5525"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      DATABASE_URL: "postgresql://postgres:postgres@db:5432/mydb?schema=public"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/blueotter?schema=public"
+    volumes:
+      - .:/app
+      - /app/node_modules
   db:
     image: postgres:15-alpine
-    container_name: postgres-db
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mydb
+      POSTGRES_DB: blueotter
     ports:
       - "5432:5432"
+      - "5433:5433"
+      - "5434:5434"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

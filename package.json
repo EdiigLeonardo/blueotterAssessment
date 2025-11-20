@@ -2,40 +2,49 @@
   "name": "github-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "dist/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "dev:docker": "docker compose up -d app && docker compose up -d db",
-    "studio": "prisma studio --port 5555 --browser none",
-    "dev:studio": "concurrently -k -n api,studio -c green,blue \"npm run dev\" \"npm run studio\"",
+    "test": "jest",
+    "dev": "node dist/server.js",
+    "studio": "npx prisma studio --port 5555 --browser none",
     "build": "tsc",
-    "prestart": "prisma generate",
+    "docker:dev": "docker-compose up --build",
     "start": "node dist/server.js",
     "start:docker": "docker exec -it app npm start",
-    "postinstall": "prisma generate",
-    "prisma:generate": "docker exec -it db prisma generate",
-    "prisma:migrate:dev": "docker exec -it db prisma migrate dev"
+    "prisma:generate": "docker exec -it app npx prisma generate",
+    "prisma:migrate:dev": "docker exec -it app npx prisma migrate dev",
+    "docker:down": "docker-compose down",
+    "docker:app": "docker-compose up -d app",
+    "docker:logs": "docker-compose logs -f app",
+    "docker:exec": "docker-compose exec app sh"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "prisma": {
-    "schema": "src/prisma/schema.prisma"
+    "schema": "prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.17.0",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^5.1.0",
-    "dotenv": "^16.4.5"
+    "nodemon": "^3.1.11"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.7.1",
+    "@types/supertest": "^6.0.3",
     "concurrently": "^9.0.1",
+    "jest": "^30.2.0",
+    "jest-mock-extended": "^4.0.0",
     "prisma": "^6.17.0",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.5",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   }
