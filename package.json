@@ -5,18 +5,12 @@
   "main": "dist/server.js",
   "scripts": {
     "test": "jest",
-    "dev": "node dist/server.js",
+    "dev": "nodemon src/server.ts",
     "studio": "npx prisma studio --port 5555 --browser none",
     "build": "tsc",
-    "docker:dev": "docker-compose up --build",
+    "docker:dev": "npm run build && docker-compose up --build",
     "start": "node dist/server.js",
-    "start:docker": "docker exec -it app npm start",
-    "prisma:generate": "docker exec -it app npx prisma generate",
-    "prisma:migrate:dev": "docker exec -it app npx prisma migrate dev",
-    "docker:down": "docker-compose down",
-    "docker:app": "docker-compose up -d app",
-    "docker:logs": "docker-compose logs -f app",
-    "docker:exec": "docker-compose exec app sh"
+    "start:docker": "docker exec -it app npm start"
   },
   "keywords": [],
   "author": "",

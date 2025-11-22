@@ -8,6 +8,14 @@ export class GithubController {
 
   sync = async (req: Request, res: Response) => {
     const login = req.params.user;
+    const users = await this.service.getUsers(login);
+    if (users) {
+      const user = users.filter((u) => u.login === login)[0];
+      console.log(user)
+      if (user) {
+        return res.json(this.service.userAlreadySynced(login))
+      }
+    }
     try {
       const result = await this.service.syncUserRepos(login);
       res.json(result);

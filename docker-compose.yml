@@ -6,32 +6,20 @@ services:
       - "3000:3000"
       - "3002:3002"
       - "5525:5525"
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/blueotter?schema=public"
+      DATABASE_URL: "file:./dev.db"
     volumes:
       - .:/app
       - /app/node_modules
-  db:
-    image: postgres:15-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: blueotter
+    entrypoint: /app/docker-entrypoint.sh
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
     ports:
-      - "5432:5432"
-      - "5433:5433"
-      - "5434:5434"
+      - "3001:3001"
+    environment:
+      VITE_API_BASE_URL: "http://localhost:3000"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  postgres_data:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev"

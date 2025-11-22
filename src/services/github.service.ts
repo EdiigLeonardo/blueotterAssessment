@@ -2,6 +2,13 @@ import { prisma } from '../db/prisma';
 import { fetchGithubUser, fetchAllRepos, fetchGithubRepo } from '../lib/githubApi';
 
 export class GithubService {
+  async getUsers(username: string){
+    const user = await prisma.githubUser.findMany({
+      where: { login: username },
+    });
+    return user
+  }
+
   async syncUserRepos(login: string) {
     const ghUser = await fetchGithubUser(login);
     const user = await prisma.githubUser.upsert({
@@ -32,6 +39,18 @@ export class GithubService {
         },
       });
     }
+    return { synced: repos.length, user: user.login };
+  }
+
+  async userAlreadySynced(login: string) {
+    const ghUser = await fetchGithubUser(login);
+    const user = await prisma.githubUser.findUnique({
+      where: { id: ghUser.id },
+    });
+    if (!user) {
+      return false;
+    }
+    const repos = await fetchAllRepos(login);
     return { synced: repos.length, user: user.login };
   }
 

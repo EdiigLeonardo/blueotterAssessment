@@ -12,11 +12,10 @@ This project implements a simple, professional API to interact with and store Gi
 
 ## Tech Stack
 
-- Node.js, Express
-- TypeScript
-- Prisma ORM
-- PostgreSQL
-- Axios (HTTP client)
+ - Backend: Node.js, Express, TypeScript, Prisma ORM
+ - Database (dev): SQLite via Prisma
+ - Frontend: React, Vite, TailwindCSS, TypeScript
+ - Axios (HTTP client)
 
 ## Project Structure
 
@@ -28,6 +27,11 @@ github-backend/
 │   ├── dev.db
 │   ├── migrations/
 │   └── schema.prisma
+├── frontend/
+│   ├── src/
+│   │   └── App.tsx
+│   ├── vite.config.ts
+│   └── tailwind.config.js
 ├── src/
 │   ├── app.ts              # Express app setup (middlewares, routes)
 │   ├── server.ts           # Server bootstrap (entry point)
@@ -74,7 +78,7 @@ model GithubRepo {
 ## Setup
 
 Prerequisites:
-- Node.js 18+
+- Node.js 18+ for backend development (frontend runs in Docker if your Node < 20.19)
 
 Steps:
 1) Install dependencies
@@ -91,7 +95,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/blueotter?schema=pub
 npx prisma generate
 npx prisma migrate dev --name init
 ```
-4) Run in development
+4) Run in development (backend)
 ```
 npm run dev
 # Server: http://localhost:3000
@@ -201,6 +205,19 @@ Examples:
 ```
 curl -sS -H "Accept: application/json" "http://localhost:3000/github/stats" | jq
 curl -sS -H "Accept: application/json" "http://localhost:3000/github/stats?user=octocat&topN=3" | jq
+```
+
+## Frontend
+
+- Framework: React + Vite + TailwindCSS + TypeScript.
+- Dev server: `http://localhost:3001`.
+- Checagem de saúde do backend: botão em `frontend/src/App.tsx` consulta `GET /` e exibe `status`.
+- Configuração do Vite (host/porta): `frontend/vite.config.ts`.
+
+Build local (requer Node >= 20.19):
+```
+cd frontend
+npm run build
 ```
 
 ## CORS
@@ -400,44 +417,33 @@ HTTP/1.1 200 OK
 }
 ```
 
-## Docker
+## Docker (Dev)
 
-Para rodar com Docker (aplicação + Postgres):
+Levanta dois serviços: backend (Express) e frontend (Vite). Útil especialmente quando sua versão local do Node é < 20.19 (requisito do Vite 7).
 
-Pré-requisitos:
-- Docker e Docker Compose
+- Comando único:
+```
+npm run docker:dev
+```
+- URLs:
+  - Backend: `http://localhost:3000/`
+  - Frontend: `http://localhost:3001/`
+- Parar:
+```
+npm run docker:down
+```
+- Logs (backend):
+```
+npm run docker:logs
+```
 
-Passos:
-1) Build da imagem
-```
-docker compose build
-```
-2) Subir o serviço
-```
-docker compose up -d
-```
-3) Logs (opcional)
-```
-docker compose logs -f app
-```
-4) Testar saúde
-```
-curl -sS -H "Accept: application/json" http://localhost:3001/ | jq
-```
-5) Executar os casos de teste acima
+Notas:
+- O serviço `frontend` usa `node:22-alpine` para satisfazer o requisito de versão do Vite.
+- O serviço `app` compila e inicia a API com SQLite (`DATABASE_URL="file:./dev.db"`).
+- Variáveis do frontend: use `VITE_API_BASE_URL` para apontar o backend (já definido como `http://localhost:3000` no compose).
 
-Configurações:
-- Porta interna da aplicação: `3000` (variável `PORT`).
-- Porta no host via Docker Compose: `3001` mapeando para a 3000 do container (ajuste em `docker-compose.yml` se desejar usar `3000`).
-- Serviço Postgres incluído no Compose: usuário `postgres`, senha `postgres`, banco `blueotter`.
-- `DATABASE_URL` do app: `postgresql://postgres:postgres@db:5432/blueotter?schema=public`.
-- Observação: `total_users` e `top_users_by_repos` aparecem apenas no modo global.
-
-Migração de SQLite para PostgreSQL:
-- O provedor Prisma foi alterado para `postgresql` em `prisma/schema.prisma`.
-- Para ambiente novo: suba o Compose e rode `npx prisma migrate deploy` (o entrypoint faz isso automaticamente).
-- Para desenvolvimento local sem Docker: atualize `.env` com a `DATABASE_URL` de Postgres e rode `npx prisma migrate dev`.
-- Estratégia de dados: a forma mais simples é reinicializar a base e re-sincronizar via endpoints `/github/sync/:user` ou `/github/sync/:user/:repo`.
+Variáveis relevantes:
+- `VITE_API_BASE_URL`: base da API consumida pelo frontend.
 
 6) Robustez de porta (opcional)
 
