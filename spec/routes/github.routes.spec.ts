@@ -27,8 +27,7 @@ describe('Github Routes', () => {
 
     const response = await request(app).get('/github/testuser/repos');
     expect(response.status).toBeDefined()
-    // expect(response.body).toBeInstanceOf(Array);
-    // expect(response.body.length).toBe(1);
+
   });
 
   test('should return 200 on POST /github/sync/:user', async () => {
@@ -42,8 +41,6 @@ describe('Github Routes', () => {
 
     const response = await request(app).post('/github/sync/testuser');
     expect(response.body).toBeDefined();
-    // expect(response.body).toHaveProperty('synced', 1);
-    // expect(response.body).toHaveProperty('user', 'testuser');
   });
 
   test('should return 404 on invalid route', async () => {
