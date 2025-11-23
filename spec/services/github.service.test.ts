@@ -1,87 +1,61 @@
-import { GithubService } from '../../src/services/github.service';
-import { fetchGithubUser, fetchAllRepos } from '../../src/lib/githubApi';
-import { prismaMock } from '../singleton';
+import { prisma } from '../mocks/prisma'
+import { GithubService } from '../../src/services/github.service'
 
-jest.mock('@prisma/client');
-jest.mock('../../src/lib/githubApi');
-jest.mock('axios');
+jest.mock('../../src/lib/githubApi', () => ({
+  fetchGithubUser: async (login: string) => ({ id: 1, login, avatar_url: 'x' }),
+  fetchAllRepos: async (_login: string) => [
+    { id: 10, name: 'a', description: null, html_url: 'u', language: 'ts', created_at: new Date().toISOString() },
+    { id: 20, name: 'b', description: null, html_url: 'u2', language: 'js', created_at: new Date().toISOString() },
+  ],
+  fetchGithubRepo: async (_owner: string, _repo: string) => ({
+    id: 30,
+    name: 'r',
+    description: null,
+    html_url: 'u3',
+    language: 'ts',
+    created_at: new Date().toISOString(),
+    owner: { id: 2, login: 'owner', avatar_url: 'o' },
+  }),
+}))
 
 describe('GithubService', () => {
-  let service: GithubService;
-  beforeEach(() => {
-    service = new GithubService();
-  });
+  const svc = new GithubService()
 
-  test('should be created', () => {
-    expect(service).toBeTruthy();
-  });
+  test('getUsers returns list', async () => {
+    prisma.githubUser.findMany.mockResolvedValue([{ id: 1, login: 'a', avatarUrl: 'x' } as any])
+    const users = await svc.getUsers()
+    expect(users).toHaveLength(1)
+  })
 
-  test('should sync user and repositories', async () => {
-    const mockUser = { id: 1, login: 'testuser', avatar_url: 'http://avatar.com' };
-    const mockRepos = [
-      {
-        id: 1,
-        name: 'test-repo',
-        description: 'test description',
-        html_url: 'http://test.com',
-        language: 'typescript',
-        created_at: '2023-01-01T00:00:00Z',
-      }
-    ];
+  test('syncUserRepos upserts and deletes missing', async () => {
+    prisma.githubUser.upsert.mockResolvedValue({ id: 1, login: 'login' } as any)
+    prisma.githubRepo.findMany.mockResolvedValue([{ id: 10 }, { id: 99 }] as any)
+    prisma.githubRepo.upsert.mockResolvedValue({} as any)
+    prisma.githubRepo.deleteMany.mockResolvedValue({ count: 1 } as any)
 
-    (fetchGithubUser as jest.Mock).mockResolvedValue(mockUser);
-    (fetchAllRepos as jest.Mock).mockResolvedValue(mockRepos);
+    const r = await svc.syncUserRepos('login')
+    expect(r.synced).toBe(2)
+    expect(r.created + r.updated).toBe(2)
+    expect(r.deleted).toBe(1)
+    expect(prisma.githubRepo.deleteMany).toHaveBeenCalled()
+  })
 
-    prismaMock.githubUser.upsert.mockResolvedValue({ id: 1, login: 'testuser', avatarUrl: 'http://avatar.com' });
-    prismaMock.githubRepo.upsert.mockResolvedValue({ id: 1, name: 'test-repo', userId: 1 });
+  test('userAlreadySynced previews diff', async () => {
+    prisma.githubUser.findUnique.mockResolvedValue({ id: 1, login: 'login' } as any)
+    prisma.githubRepo.findMany.mockResolvedValue([{ id: 10 }, { id: 99 }] as any)
+    const r = await svc.userAlreadySynced('login')
+    expect(r).toMatchObject({ user: 'login', will_delete: 1, will_create: 1 })
+  })
 
-    const result = await service.syncUserRepos('testuser');
+  test('syncRepo upserts single repo', async () => {
+    prisma.githubUser.upsert.mockResolvedValue({ id: 2, login: 'owner' } as any)
+    prisma.githubRepo.upsert.mockResolvedValue({} as any)
+    const r = await svc.syncRepo('owner', 'repo')
+    expect(r).toMatchObject({ synced: 1, user: 'owner' })
+  })
 
-    expect(fetchGithubUser).toHaveBeenCalledWith('testuser');
-    expect(fetchAllRepos).toHaveBeenCalledWith('testuser');
-    expect(prismaMock.githubUser.upsert).toHaveBeenCalled();
-    expect(prismaMock.githubRepo.upsert).toHaveBeenCalled();
-    expect(result).toEqual({ synced: 1, user: 'testuser' });
-  });
-
-  test('should handle user not found on GitHub', async () => {
-    (fetchGithubUser as jest.Mock).mockRejectedValue({ response: { status: 404 } });
-    expect(fetchGithubUser).toHaveBeenCalledWith('unknown');
-  });
-
-  test('should list user repositories', async () => {
-    const mockUser = { id: 1, login: 'testuser', avatarUrl: 'http://avatar.com' };
-    const mockRepos = [
-      {
-        id: 1,
-        name: 'test-repo',
-        description: 'test description',
-        htmlUrl: 'http://test.com',
-        language: 'typescript',
-        createdAt: new Date('2023-01-01T00:00:00Z'),
-      }
-    ];
-
-    prismaMock.githubUser.findUnique.mockResolvedValue(mockUser);
-    prismaMock.githubRepo.findMany.mockResolvedValue(mockRepos);
-
-    const result = await service.listUserRepos('testuser');
-
-    expect(prismaMock.githubUser.findUnique).toHaveBeenCalledWith({ where: { login: 'testuser' } });
-    expect(prismaMock.githubRepo.findMany).toHaveBeenCalledWith({
-      where: { userId: mockUser.id },
-      select: { id: true, name: true, description: true, htmlUrl: true, language: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    expect(result).toEqual(mockRepos);
-  });
-
-  test('should return empty array for non-existent user', async () => {
-    prismaMock.githubUser.findUnique.mockResolvedValue(null);
-
-    const result = await service.listUserRepos('unknown');
-
-    expect(prismaMock.githubUser.findUnique).toHaveBeenCalledWith({ where: { login: 'unknown' } });
-    expect(result).toEqual([]);
-  });
-});
+  test('searchRepos trims and returns [] when empty', async () => {
+    const r = await svc.searchRepos('   ')
+    expect(r).toEqual([])
+  })
+})
