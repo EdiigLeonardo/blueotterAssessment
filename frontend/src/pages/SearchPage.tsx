@@ -22,7 +22,7 @@ export default function SearchPage() {
         {items.map((it, i) => (
           <li key={i} className="border rounded p-3">
             <div className="font-medium">
-              <a className="text-indigo-600" href={it.url} target="_blank" rel="noreferrer">{it.name}</a>
+              <a className="text-[#1ab7ea]" href={it.url} target="_blank" rel="noreferrer">{it.name}</a>
             </div>
             <div className="text-xs text-gray-600">{it.language ?? ''}</div>
             <div className="text-xs">{it.description ?? ''}</div>

@@ -31,7 +31,7 @@ export default function UserReposPage() {
             {items.map((it, i) => (
               <tr key={i} className="border-b hover:bg-gray-50">
                 <td className="p-2">
-                  <a className="text-indigo-600" href={it.url} target="_blank" rel="noreferrer">{it.name}</a>
+                  <a className="text-[#1ab7ea]" href={it.url} target="_blank" rel="noreferrer">{it.name}</a>
                 </td>
                 <td className="p-2">{it.language ?? ''}</td>
                 <td className="p-2">{it.created_at}</td>

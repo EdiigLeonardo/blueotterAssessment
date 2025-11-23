@@ -11,7 +11,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    entrypoint: /app/docker-entrypoint.sh
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run build && node dist/server.js"
   frontend:
     image: node:22-alpine
     working_dir: /app

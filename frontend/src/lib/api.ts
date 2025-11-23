@@ -5,6 +5,11 @@ export async function getHealth() {
   return res.json()
 }
 
+export async function getUsers() {
+  const res = await fetch(`${base}/github/users`)
+  return res.json()
+}
+
 export async function syncUser(user: string) {
   const res = await fetch(`${base}/github/sync/${encodeURIComponent(user)}`, {
     method: 'POST',

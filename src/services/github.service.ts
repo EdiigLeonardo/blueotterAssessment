@@ -2,11 +2,10 @@ import { prisma } from '../db/prisma';
 import { fetchGithubUser, fetchAllRepos, fetchGithubRepo } from '../lib/githubApi';
 
 export class GithubService {
-  async getUsers(username: string){
-    const user = await prisma.githubUser.findMany({
-      where: { login: username },
+  async getUsers(){
+    const users = await prisma.githubUser.findMany({
     });
-    return user
+    return users
   }
 
   async syncUserRepos(login: string) {
@@ -17,6 +16,11 @@ export class GithubService {
       create: { id: ghUser.id, login: ghUser.login, avatarUrl: ghUser.avatar_url ?? null },
     });
     const repos = await fetchAllRepos(login);
+    const existing = await prisma.githubRepo.findMany({ where: { userId: user.id }, select: { id: true } });
+    const existingIds = new Set(existing.map(r => r.id));
+    const ghIds = new Set(repos.map((r: any) => r.id as number));
+    let created = 0;
+    let updated = 0;
     for (const r of repos) {
       await prisma.githubRepo.upsert({
         where: { id: r.id },
@@ -38,8 +42,15 @@ export class GithubService {
           userId: user.id,
         },
       });
+      if (existingIds.has(r.id)) updated += 1; else created += 1;
     }
-    return { synced: repos.length, user: user.login };
+    const toDelete = Array.from(existingIds).filter(id => !ghIds.has(id));
+    let deleted = 0;
+    if (toDelete.length > 0) {
+      const res = await prisma.githubRepo.deleteMany({ where: { id: { in: toDelete }, userId: user.id } });
+      deleted = res.count ?? toDelete.length;
+    }
+    return { synced: repos.length, user: user.login, created, updated, deleted };
   }
 
   async userAlreadySynced(login: string) {
@@ -51,7 +62,12 @@ export class GithubService {
       return false;
     }
     const repos = await fetchAllRepos(login);
-    return { synced: repos.length, user: user.login };
+    const existing = await prisma.githubRepo.findMany({ where: { userId: user.id }, select: { id: true } });
+    const existingIds = new Set(existing.map(r => r.id));
+    const ghIds = new Set(repos.map((r: any) => r.id as number));
+    const toDelete = Array.from(existingIds).filter(id => !ghIds.has(id));
+    const missingInDb = Array.from(ghIds).filter(id => !existingIds.has(id));
+    return { synced: repos.length, user: user.login, will_delete: toDelete.length, will_create: missingInDb.length };
   }
 
   async syncRepo(login: string, repoName: string) {

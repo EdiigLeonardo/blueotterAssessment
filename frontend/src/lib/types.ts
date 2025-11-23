@@ -13,3 +13,9 @@ export interface StatsResponse {
   top_users_by_repos?: { user: string; repos: number }[]
   timeline_created_monthly: { month: string; count: number }[]
 }
+
+export type User = {
+  id: number
+  login: string
+  avatar_url: string
+}

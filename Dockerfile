@@ -10,4 +10,4 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
-CMD ["npm", "run", "dev", "node", "dist/server.js"]
+CMD ["npm", "run", "dev", "nodemon", "src/server.ts"]
