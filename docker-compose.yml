@@ -1,14 +1,25 @@
 services:
   app:
+    restart: unless-stopped
     build: .
-    container_name: github-backend
     ports:
       - "3000:3000"
-      - "3001:3000"
-      - "3002:3000"
+      - "3002:3002"
+      - "5525:5525"
     environment:
-      - PORT=3000
-      - DATABASE_URL=file:./prisma/dev.db
+      DATABASE_URL: "file:./dev.db"
     volumes:
-      - ./prisma:/app/prisma
-    restart: unless-stopped
+      - .:/app
+      - /app/node_modules
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run build && node dist/server.js"
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    ports:
+      - "3001:3001"
+    environment:
+      VITE_API_BASE_URL: "http://localhost:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev"

@@ -6,6 +6,7 @@ const controller = new GithubController();
 
 router.post('/sync/:user', controller.sync);
 router.post('/sync/:user/:repo', controller.syncRepo);
+router.get('/users', controller.users);
 router.get('/:user/repos', controller.listUserRepos);
 router.get('/search', controller.searchRepos);
 router.get('/stats', controller.stats);

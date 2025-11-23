@@ -1,10 +1,10 @@
-# GitHub Backend Challenge (Node.js + Express + TypeScript + Prisma/SQLite)
+# GitHub Backend Challenge (Node.js + Express + TypeScript + Prisma/PostgreSQL)
 
-This project implements a simple, professional API to interact with and store GitHub user repository data locally. It was built from scratch, separate from any existing projects, using Node.js, Express, TypeScript, Prisma (SQLite), and Axios.
+This project implements a simple, professional API to interact with and store GitHub user repository data locally. It was built from scratch, separate from any existing projects, using Node.js, Express, TypeScript, Prisma (PostgreSQL), and Axios.
 
 ## Features
 
-- Sync public repositories of a GitHub user into a local SQLite database
+- Sync public repositories of a GitHub user into a local PostgreSQL database
 - List stored repositories for a given user
 - Search stored repositories by text
 - Compute statistics from locally stored data (global or per user)
@@ -12,11 +12,10 @@ This project implements a simple, professional API to interact with and store Gi
 
 ## Tech Stack
 
-- Node.js, Express
-- TypeScript
-- Prisma ORM
-- SQLite (file-based DB)
-- Axios (HTTP client)
+ - Backend: Node.js, Express, TypeScript, Prisma ORM
+ - Database (dev): SQLite via Prisma
+ - Frontend: React, Vite, TailwindCSS, TypeScript
+ - Axios (HTTP client)
 
 ## Project Structure
 
@@ -28,6 +27,11 @@ github-backend/
 │   ├── dev.db
 │   ├── migrations/
 │   └── schema.prisma
+├── frontend/
+│   ├── src/
+│   │   └── App.tsx
+│   ├── vite.config.ts
+│   └── tailwind.config.js
 ├── src/
 │   ├── app.ts              # Express app setup (middlewares, routes)
 │   ├── server.ts           # Server bootstrap (entry point)
@@ -74,7 +78,7 @@ model GithubRepo {
 ## Setup
 
 Prerequisites:
-- Node.js 18+
+- Node.js 18+ for backend development (frontend runs in Docker if your Node < 20.19)
 
 Steps:
 1) Install dependencies
@@ -84,14 +88,14 @@ npm install
 2) Configure environment
 ```
 # .env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/blueotter?schema=public"
 ```
 3) Initialize database (generate client + apply migrations)
 ```
 npx prisma generate
 npx prisma migrate dev --name init
 ```
-4) Run in development
+4) Run in development (backend)
 ```
 npm run dev
 # Server: http://localhost:3000
@@ -171,7 +175,7 @@ Response (fields):
 
 ### Endpoint 3: Search repositories
 GET `/github/search?query=...`
-Search fields: name, description, language, htmlUrl (SQLite contains match).
+Search fields: name, description, language, htmlUrl.
 
 Example:
 ```
@@ -201,6 +205,19 @@ Examples:
 ```
 curl -sS -H "Accept: application/json" "http://localhost:3000/github/stats" | jq
 curl -sS -H "Accept: application/json" "http://localhost:3000/github/stats?user=octocat&topN=3" | jq
+```
+
+## Frontend
+
+- Framework: React + Vite + TailwindCSS + TypeScript.
+- Dev server: `http://localhost:3001`.
+- Checagem de saúde do backend: botão em `frontend/src/App.tsx` consulta `GET /` e exibe `status`.
+- Configuração do Vite (host/porta): `frontend/vite.config.ts`.
+
+Build local (requer Node >= 20.19):
+```
+cd frontend
+npm run build
 ```
 
 ## CORS
@@ -400,37 +417,33 @@ HTTP/1.1 200 OK
 }
 ```
 
-## Docker
+## Docker (Dev)
 
-Para rodar com Docker (aplicação + volume persistente para SQLite):
+Levanta dois serviços: backend (Express) e frontend (Vite). Útil especialmente quando sua versão local do Node é < 20.19 (requisito do Vite 7).
 
-Pré-requisitos:
-- Docker e Docker Compose
+- Comando único:
+```
+npm run docker:dev
+```
+- URLs:
+  - Backend: `http://localhost:3000/`
+  - Frontend: `http://localhost:3001/`
+- Parar:
+```
+npm run docker:down
+```
+- Logs (backend):
+```
+npm run docker:logs
+```
 
-Passos:
-1) Build da imagem
-```
-docker compose build
-```
-2) Subir o serviço
-```
-docker compose up -d
-```
-3) Logs (opcional)
-```
-docker compose logs -f app
-```
-4) Testar saúde
-```
-curl -sS -H "Accept: application/json" http://localhost:3001/ | jq
-```
-5) Executar os casos de teste acima
+Notas:
+- O serviço `frontend` usa `node:22-alpine` para satisfazer o requisito de versão do Vite.
+- O serviço `app` compila e inicia a API com SQLite (`DATABASE_URL="file:./dev.db"`).
+- Variáveis do frontend: use `VITE_API_BASE_URL` para apontar o backend (já definido como `http://localhost:3000` no compose).
 
-Configurações:
-- Porta interna da aplicação: `3000` (variável `PORT`).
-- Porta no host via Docker Compose: `3001` mapeando para a 3000 do container (ajuste em `docker-compose.yml` se desejar usar `3000`).
-- `DATABASE_URL` padrão: `file:./prisma/dev.db` (persistido no volume/arquivo montado).
-- Observação: `total_users` e `top_users_by_repos` aparecem apenas no modo global.
+Variáveis relevantes:
+- `VITE_API_BASE_URL`: base da API consumida pelo frontend.
 
 6) Robustez de porta (opcional)
 
