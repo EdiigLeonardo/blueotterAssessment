@@ -21,10 +21,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^5.1.0",
-    "netlify-cli": "^23.11.1",
-    "netlify-lambda": "^2.0.16",
-    "nodemon": "^3.1.11",
-    "serverless-http": "^4.0.0"
+    "nodemon": "^3.1.11"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
