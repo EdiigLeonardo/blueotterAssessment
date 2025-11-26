@@ -52,24 +52,6 @@ export class GithubService {
     }
     return { synced: repos.length, user: user.login, created, updated, deleted };
   }
-
-  async userAlreadySynced(login: string) {
-    const ghUser = await fetchGithubUser(login);
-    const user = await prisma.githubUser.findUnique({
-      where: { id: ghUser.id },
-    });
-    if (!user) {
-      return false;
-    }
-    const repos = await fetchAllRepos(login);
-    const existing = await prisma.githubRepo.findMany({ where: { userId: user.id }, select: { id: true } });
-    const existingIds = new Set(existing.map(r => r.id));
-    const ghIds = new Set(repos.map((r: any) => r.id as number));
-    const toDelete = Array.from(existingIds).filter(id => !ghIds.has(id));
-    const missingInDb = Array.from(ghIds).filter(id => !existingIds.has(id));
-    return { synced: repos.length, user: user.login, will_delete: toDelete.length, will_create: missingInDb.length };
-  }
-
   async syncRepo(login: string, repoName: string) {
     const repo: any = await fetchGithubRepo(login, repoName);
     const owner = repo.owner as { id: number; login: string; avatar_url?: string | null };

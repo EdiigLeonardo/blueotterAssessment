@@ -40,12 +40,6 @@ describe('GithubService', () => {
     expect(prisma.githubRepo.deleteMany).toHaveBeenCalled()
   })
 
-  test('userAlreadySynced previews diff', async () => {
-    prisma.githubUser.findUnique.mockResolvedValue({ id: 1, login: 'login' } as any)
-    prisma.githubRepo.findMany.mockResolvedValue([{ id: 10 }, { id: 99 }] as any)
-    const r = await svc.userAlreadySynced('login')
-    expect(r).toMatchObject({ user: 'login', will_delete: 1, will_create: 1 })
-  })
 
   test('syncRepo upserts single repo', async () => {
     prisma.githubUser.upsert.mockResolvedValue({ id: 2, login: 'owner' } as any)

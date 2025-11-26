@@ -20,15 +20,6 @@ export class GithubController {
     const login = req.params.user;
     console.debug({ controller: 'GithubController', action: 'sync_start', params: req.params });
     const users = await this.service.getUsers();
-    if (users) {
-      const user = users.filter((u) => u.login === login)[0];
-      console.debug({ controller: 'GithubController', action: 'sync_lookup', exists: Boolean(user), login });
-      if (user) {
-        const already = await this.service.userAlreadySynced(login);
-        console.debug({ controller: 'GithubController', action: 'sync_already', login });
-        return res.json(already)
-      }
-    }
     try {
       const result = await this.service.syncUserRepos(login);
       console.debug({ controller: 'GithubController', action: 'sync_success', login });

@@ -7,15 +7,17 @@ services:
       - "3000:3000"
     command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run build && node dist/server.js"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
   db:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: blueotter
+      POSTGRES_PASSWORD: NPRaKyapoXcy4XamHihxhAIVRcFhnICh
       POSTGRES_DB: blueotter
     ports:
       - "5432:5432"
+      - "5433:5433"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
