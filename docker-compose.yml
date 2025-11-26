@@ -7,11 +7,13 @@ services:
       - "3002:3002"
       - "5525:5525"
     environment:
-      DATABASE_URL: "file:./dev.db"
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/blueotter?schema=public"
     volumes:
       - .:/app
       - /app/node_modules
     command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run build && node dist/server.js"
+    depends_on:
+      - db
   frontend:
     image: node:22-alpine
     working_dir: /app
@@ -23,3 +25,16 @@ services:
       - ./frontend:/app
       - /app/node_modules
     command: sh -c "npm install && npm run dev"
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: blueotter
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

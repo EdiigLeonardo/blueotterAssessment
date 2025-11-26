@@ -9,8 +9,12 @@ export class GithubController {
   users = async (req: Request, res: Response) => {
     console.debug({ controller: 'GithubController', action: 'users', route: req.originalUrl, method: req.method });
     const users = await this.service.getUsers();
-    console.debug({ controller: 'GithubController', action: 'users_success', count: Array.isArray(users) ? users.length : 0 });
-    res.json(users);
+    if(users){
+      console.debug({ controller: 'GithubController', action: 'users_success', count: Array.isArray(users) ? users.length : 0 });
+      res.json(users);
+    } else {
+      res.json([])
+    }
   }
   sync = async (req: Request, res: Response) => {
     const login = req.params.user;

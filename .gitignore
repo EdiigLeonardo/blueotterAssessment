@@ -30,7 +30,7 @@ Thumbs.db
 
 # Prisma
 .prisma/
-prisma/*.db
+# prisma/*.db
 prisma/*.sqlite
 
 # Generated code/artifacts

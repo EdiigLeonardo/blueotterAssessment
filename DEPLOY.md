@@ -1,5 +1,68 @@
 # DEPLOY
 
+## Overview
+- Frontend is a Vite React app and can be deployed on Netlify.
+- Backend is an Express API that should run on a Node host (e.g. Render, Railway, Fly.io).
+- Database in development uses SQLite. For production, use a managed Postgres (e.g. Neon, Supabase) and update Prisma `DATABASE_URL`.
+
+## Backend (API)
+- Prerequisites:
+  - Node 20+
+  - Prisma migrations available in `prisma/migrations`
+- Environment:
+  - Set `DATABASE_URL` to your production database connection string.
+- Build and run commands:
+  - `npm install`
+  - `npx prisma generate`
+  - `npx prisma migrate deploy`
+  - `npm run build`
+  - `node dist/server.js`
+- Recommended hosting:
+  - Render: create a Web Service, set `Build Command` to `npm install && npx prisma generate && npm run build`, `Start Command` to `npx prisma migrate deploy && node dist/server.js`.
+  - Railway/Fly.io: similar commands; ensure `DATABASE_URL` is configured.
+
+## Database
+- Development:
+  - SQLite (`file:./dev.db`) used locally.
+- Production with SQLite:
+  - Use a host with persistent filesystem (Railway volumes, Fly.io volumes, VM with Docker volume).
+  - Set `DATABASE_URL` to an absolute path inside the mounted volume, e.g. `file:/data/app.db`.
+  - Ensure the directory exists and is writable by the container/user.
+  - Apply migrations at boot: `npx prisma migrate deploy`.
+  - Backups: use Litestream to continuously replicate the SQLite file to object storage (e.g., S3) and restore on failure.
+  - Avoid serverless hosts for the backend (Netlify/Vercel), as their filesystems are ephemeral.
+- Production with Postgres (alternative):
+  - Create a database on Neon or Supabase and set `DATABASE_URL` accordingly.
+  - Run `npx prisma migrate deploy` during backend startup.
+
+## Frontend (Netlify)
+- What you need:
+  - A reachable backend URL (e.g. `https://your-api.onrender.com`).
+  - Netlify account connected to your Git repository.
+- Netlify site setup:
+  - New site → Import from Git.
+  - Monorepo settings:
+    - Base directory: `frontend`
+    - Build command: `npm run build`
+    - Publish directory: `dist`
+  - Environment variables:
+    - `VITE_API_BASE_URL` = `https://your-api.onrender.com`
+  - Node version (optional): set to `20` in site build settings.
+- Alternative (Netlify CLI):
+  - `npm install -g netlify-cli`
+  - `netlify init` (select site) in `frontend/`
+  - `netlify deploy --prod --dir=dist` after `npm run build`
+
+## Verification
+- After deploy:
+  - Frontend: open Netlify site URL and verify navigation and API calls.
+  - Backend: check host logs and `/` health endpoint returns `{ status: "ok" }`.
+  - Sync flow: run `POST /github/sync/:user`, confirm repositories list renders in the frontend.
+
+## Notes
+- Netlify is ideal for the frontend; do not host the Express server or the database on Netlify.
+- Ensure CORS is enabled on the backend and `VITE_API_BASE_URL` points to the public backend URL.
+
 Guia de deploy dos containers de `app` (backend Express) e `frontend` (Vite/React) em plataformas comuns.
 
 ## Visão Geral
