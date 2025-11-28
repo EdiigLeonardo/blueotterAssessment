@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model GithubUser {
+  id        Int         @id
+  login     String      @unique
+  avatarUrl String?
+  repos     GithubRepo[]
+}
+
+model GithubRepo {
+  id         Int       @id
+  name       String
+  description String?
+  htmlUrl    String
+  language   String?
+  createdAt  DateTime
+  userId     Int
+  user       GithubUser @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
