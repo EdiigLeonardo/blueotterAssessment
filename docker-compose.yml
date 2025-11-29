@@ -6,9 +6,9 @@ services:
       - "3000:3000"
       - "3002:3002"
       - "5525:5525"
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && node dist/server.js"
     environment:
       DATABASE_URL: "postgresql://blueotter:blueotter@db:5432/blueotter?schema=public"
-    command: npx nodemon --watch src --exec npx ts-node src/server.ts
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
       interval: 10s
@@ -18,7 +18,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    
   frontend:
     image: node:22-alpine
     working_dir: /app
