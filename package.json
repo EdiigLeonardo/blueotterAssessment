@@ -28,7 +28,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^5.1.0",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "serverless-http": "^4.0.0"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
