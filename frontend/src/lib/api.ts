@@ -36,9 +36,10 @@ export async function searchRepos(query: string) {
 }
 
 export async function stats(params?: { user?: string; topN?: number }) {
-  const u = new URL(`${base}/github/stats`)
-  if (params?.user) u.searchParams.set('user', params.user)
-  if (params?.topN) u.searchParams.set('topN', String(params.topN))
-  const res = await fetch(u)
+  const qs = new URLSearchParams()
+  if (params?.user) qs.set('user', params.user)
+  if (params?.topN) qs.set('topN', String(params.topN))
+  const url = `${base}/github/stats${qs.toString() ? `?${qs.toString()}` : ''}`
+  const res = await fetch(url)
   return res.json()
 }

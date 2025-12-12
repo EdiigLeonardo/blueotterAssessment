@@ -8,6 +8,7 @@
     "dev": "nodemon --watch src/server.ts",
     "studio": "npx prisma studio --port 5555 --browser none",
     "build": "tsc",
+    "db:dev:init": "cpy-cli \"prisma/schema.sqlite.prisma\" prisma/schema.prisma && npx prisma generate && npx prisma db push",
     "migrate": "npx prisma generate && npx prisma migrate deploy",
     "docker:dev": "npm run build && docker-compose up --build",
     "docker:prod": "npm run build && docker-compose -f docker-compose.prod.yml up --build",
@@ -31,7 +32,9 @@
     "netlify-cli": "^23.12.2",
     "nodemon": "^3.1.11",
     "serverless-http": "^4.0.0",
-    "vercel": "^48.12.0"
+    "swagger-ui-express": "^5.0.1",
+    "vercel": "^48.12.0",
+    "zeromq": "^6.0.0-beta.6"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

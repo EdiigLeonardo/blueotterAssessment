@@ -1,5 +1,6 @@
 import { prisma } from '../db/prisma';
 import { fetchGithubUser, fetchAllRepos, fetchGithubRepo } from '../lib/githubApi';
+import { messaging } from '../lib/messaging';
 
 export class GithubService {
   async getUsers(){
@@ -50,7 +51,9 @@ export class GithubService {
       const res = await prisma.githubRepo.deleteMany({ where: { id: { in: toDelete }, userId: user.id } });
       deleted = res.count ?? toDelete.length;
     }
-    return { synced: repos.length, user: user.login, created, updated, deleted };
+    const result = { synced: repos.length, user: user.login, created, updated, deleted };
+    await messaging.publish('sync.user', JSON.stringify(result));
+    return result;
   }
   async syncRepo(login: string, repoName: string) {
     const repo: any = await fetchGithubRepo(login, repoName);
@@ -82,7 +85,9 @@ export class GithubService {
       },
     });
 
-    return { synced: 1, user: user.login, repo: repo.name };
+    const result = { synced: 1, user: user.login, repo: repo.name };
+    await messaging.publish('sync.repo', JSON.stringify(result));
+    return result;
   }
   async listUserRepos(login: string) {
     const user = await prisma.githubUser.findUnique({ where: { login } });
